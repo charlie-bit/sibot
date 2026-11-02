@@ -425,7 +425,8 @@ test/
   fixtures/
   core/
   server/
-tech.md
+docs/
+  tech.md
 CONTRIBUTING.md
 ```
 

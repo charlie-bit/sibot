@@ -33,7 +33,7 @@ scratch/
 .cache/
 
 # ---- Local notes (non-English scratch, never committed — CONTRIBUTING.md §3) ----
-.doc/local/
+docs/local/
 
 # ---- Language / build (uncomment as the stack lands) ----
 # node

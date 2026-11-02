@@ -9,13 +9,13 @@ switch between them at will, and keep a single continuous conversation while doi
 
 ## Status
 
-Architecture is drafted in [`.doc/tech.md`](.doc/tech.md). No code yet.
+Architecture is drafted in [`docs/tech.md`](docs/tech.md). No code yet.
 
 ## Documentation
 
 | Document | Contents |
 |----------|----------|
-| [`.doc/tech.md`](.doc/tech.md) | Architecture, provider contract, routing, storage, API, milestones |
+| [`docs/tech.md`](docs/tech.md) | Architecture, provider contract, routing, storage, API, milestones |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution rules |
 
 ## Contributing
