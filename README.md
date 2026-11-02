@@ -4,10 +4,19 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+sibot is an **AI control center**: one place to talk to many models from many providers,
+switch between them at will, and keep a single continuous conversation while doing so.
+
 ## Status
 
-This repository is at day zero. The project's purpose, inputs and outputs, and tech stack
-are still open questions; documentation will be added once the scope is defined.
+Architecture is drafted in [`tech.md`](tech.md). No code yet.
+
+## Documentation
+
+| Document | Contents |
+|----------|----------|
+| [`tech.md`](tech.md) | Architecture, provider contract, routing, storage, API, milestones |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution rules |
 
 ## Contributing
 
