@@ -9,14 +9,13 @@ switch between them at will, and keep a single continuous conversation while doi
 
 ## Status
 
-No code yet, and no design decisions beyond the sentence above — see
-[`docs/tech.md`](docs/tech.md).
+No code yet. The v1 scope is recorded in [`docs/tech.md`](docs/tech.md).
 
 ## Documentation
 
 | Document | Contents |
 |----------|----------|
-| [`docs/tech.md`](docs/tech.md) | Architecture, provider contract, routing, storage, API, milestones |
+| [`docs/tech.md`](docs/tech.md) | What sibot is, and the v1 scope decided so far |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution rules |
 
 ## Contributing
