@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sibot — 技术设计 v0.1</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --text: #c9d1d9; --heading: #f0f6fc; --accent: #58a6ff;
+      --green: #3fb950; --yellow: #d29922; --red: #f85149;
+      --purple: #bc8cff; --orange: #d18616; --cyan: #39d2c0;
+      --muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { overflow-x: clip; }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+           background: var(--bg); color: var(--text); line-height: 1.6;
+           padding: 2rem; max-width: 1720px; margin: 0 auto; width: 100%; }
+    h1 { color: var(--heading); font-size: 1.8rem; margin-bottom: 0.4rem; }
+    h2 { color: var(--accent); font-size: 1.3rem; margin: 2rem 0 1rem;
+         border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { color: var(--heading); font-size: 1rem; margin: 1.2rem 0 0.6rem; }
+    h4 { color: var(--heading); font-size: 0.92rem; margin: 1rem 0 0.4rem; }
+    h5 { color: var(--heading); font-size: 0.86rem; margin: 0.9rem 0 0.3rem; }
+    .subtitle { color: var(--muted); margin-bottom: 0.4rem; font-size: 0.9rem; }
+    .meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 1.6rem;
+            font-family: 'SF Mono', Consolas, monospace; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.5rem; margin-bottom: 1.5rem; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.88rem; table-layout: fixed; word-break: break-word; }
+    th, td { padding: 0.55rem 0.8rem; text-align: left; border: 1px solid var(--border); }
+    th { background: #21262d; color: var(--heading); font-weight: 600; }
+    td { vertical-align: top; word-break: break-word; }
+    code { background: #21262d; padding: 2px 6px; border-radius: 4px;
+           font-size: 0.83rem; color: var(--orange); font-family: 'SF Mono', Consolas, monospace; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 12px;
+           font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
+    .ok  { background: #1a3a1a; color: var(--green); }
+    .pr  { background: #1f3a5f; color: var(--accent); }
+    .stub { background: #2d1a1a; color: var(--red); }
+    .todo { background: #2d2000; color: var(--yellow); }
+    .note { background: #1a2332; border-left: 3px solid var(--accent);
+            padding: 0.8rem 1rem; margin: 0.8rem 0; border-radius: 0 4px 4px 0; font-size: 0.88rem; }
+    .warn { background: #2d1f00; border-left: 3px solid var(--yellow);
+            padding: 0.8rem 1rem; margin: 0.8rem 0; border-radius: 0 4px 4px 0; font-size: 0.88rem; }
+    pre { font-family: 'SF Mono', Consolas, monospace; font-size: 0.8rem;
+          line-height: 1.7; overflow-x: auto; white-space: pre-wrap; word-break: break-all; color: var(--text);
+          background: #21262d; padding: 1rem; border-radius: 6px; margin: 0.6rem 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .toc { list-style: none; margin: 0.6rem 0 0 0; }
+    .toc ul { list-style: none; margin: 0.25rem 0 0.35rem 1.2rem; }
+    .toc li { margin: 0.18rem 0; }
+    .toc > li > a { font-weight: 600; }
+    .toc ul { font-size: 0.86rem; }
+    .toc ul ul { font-size: 0.82rem; }
+    .toc ul a { color: var(--text); }
+    .toc ul a:hover { color: var(--accent); }
+
+    .layout { display: grid; grid-template-columns: 292px minmax(0, 1fr);
+              gap: 2rem; align-items: start; }
+    .sidebar { position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem);
+               overflow-y: auto; border-right: 1px solid var(--border); padding-right: 1rem; }
+    .sidebar-title { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em;
+                     text-transform: uppercase; margin-bottom: 0.6rem;
+                     position: sticky; top: 0; background: var(--bg); padding: 0.3rem 0; z-index: 1; }
+    .toc-side, .toc-side ul { list-style: none; margin: 0; padding: 0; }
+    .toc-side { font-size: 0.82rem; }
+    .toc-side ul { margin-left: 0.8rem; font-size: 0.78rem; }
+    .toc-side li { margin: 0.1rem 0; line-height: 1.35; }
+    .toc-side a { color: var(--muted); display: block; padding: 0.12rem 0.4rem;
+                  border-left: 2px solid transparent; }
+    .toc-side a:hover { color: var(--accent); }
+    .toc-side a.active { color: var(--accent); border-left-color: var(--accent);
+                         background: #161b22; border-radius: 0 4px 4px 0; }
+    h2[id], h3[id], h4[id], h5[id] { scroll-margin-top: 1rem; }
+    @media (max-width: 1100px) {
+      .layout { display: block; }
+      .sidebar { display: none; }
+    }
+
+    .mermaid { background: #161b22; border: 1px solid var(--border); border-radius: 6px;
+               padding: 1rem; margin: 0.8rem 0; overflow-x: auto; }
+    .mermaid[data-processed="true"] { background: transparent; border: none; padding: 0; }
+    .mermaid svg { max-width: 100%; height: auto; }
+    .mermaid-failed { border-left: 3px solid var(--yellow); }
+    .mermaid-failed pre { margin: 0; background: transparent; padding: 0; }
+
+    table.cols-2 th:nth-child(1) { width: 24%; }
+    table.cols-3 th:nth-child(1) { width: 26%; }
+    table.cols-3 th:nth-child(2) { width: 30%; }
+    table.cols-4 th:nth-child(1) { width: 20%; }
+    table.cols-4 th:nth-child(2) { width: 14%; }
+    table.cols-4 th:nth-child(3) { width: 14%; }
+    table.cols-5 th:nth-child(1) { width: 22%; }
+    table.cols-5 th:nth-child(2) { width: 12%; }
+    table.cols-5 th:nth-child(3) { width: 8%; }
+    table.cols-5 th:nth-child(4) { width: 14%; }
+
+    .overview-table { font-size: 0.8rem; }
+    .overview-table th:nth-child(1){width:15%} .overview-table th:nth-child(2){width:9%}
+    .overview-table th:nth-child(3){width:14%} .overview-table th:nth-child(4){width:16%}
+    .overview-table th:nth-child(5){width:14%} .overview-table th:nth-child(6){width:16%}
+    .overview-table th:nth-child(7){width:16%}
+    .compare-table { font-size: 0.8rem; }
+    .compare-table th:nth-child(1){width:12%} .compare-table th:nth-child(2){width:16%}
+    .compare-table th:nth-child(3),.compare-table th:nth-child(4),.compare-table th:nth-child(5),
+    .compare-table th:nth-child(6),.compare-table th:nth-child(7){width:14.4%}
+    .take-table th:nth-child(1){width:16%} .take-table th:nth-child(2){width:30%}
+    .take-table th:nth-child(3){width:26%} .take-table th:nth-child(4){width:28%}
+    .ref-table th:nth-child(1){width:18%} .ref-table th:nth-child(2){width:10%}
+    .ref-table th:nth-child(3){width:36%} .ref-table th:nth-child(4){width:36%}
+    .tools-table th:nth-child(1){width:14%} .tools-table th:nth-child(2){width:36%}
+    .tools-table th:nth-child(3){width:20%} .tools-table th:nth-child(4){width:30%}
+    .components-table th:nth-child(1){width:6%} .components-table th:nth-child(2){width:20%}
+    .components-table th:nth-child(3){width:42%} .components-table th:nth-child(4){width:32%}
+    .api-table th:nth-child(1){width:6%}  .api-table th:nth-child(2){width:22%}
+    .api-table th:nth-child(3){width:38%} .api-table th:nth-child(4){width:34%}
+
+    .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .entity { background: #21262d; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; }
+    .entity-name { color: var(--heading); font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .entity-desc { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.6rem; }
+    .entity-fields { font-size: 0.8rem; }
+    .entity-fields li { list-style: none; padding: 2px 0; }
+    .points th:nth-child(1){width:5%}     .points th:nth-child(2){width:30%}
+    .points th:nth-child(3){width:50%}    .points th:nth-child(4){width:15%}
+
+    td.st-ok { background: #12261a; }
+    td.st-todo { color: var(--muted); }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.3rem; }
+    li { margin: 0.25rem 0; }
+    li > ul, li > ol { margin: 0.2rem 0 0.2rem 1.1rem; }
+    p { margin: 0.6rem 0; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+    blockquote { border-left: 3px solid var(--border); padding-left: 0.9rem;
+                 color: var(--muted); margin: 0.6rem 0; }
+  </style>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      themeVariables: { fontSize: '14px', fontFamily: 'ui-sans-serif, system-ui' }
+    });
+    let n = 0;
+    for (const el of document.querySelectorAll('.mermaid')) {
+      const src = el.textContent;
+      try {
+        const { svg } = await mermaid.render('mmd-' + (++n), src);
+        el.innerHTML = svg;
+        el.setAttribute('data-processed', 'true');
+      } catch (err) {
+        el.classList.add('mermaid-failed');
+        const pre = document.createElement('pre');
+        pre.textContent = src;
+        el.replaceChildren(pre);
+        console.error('mermaid render failed', err);
+      }
+    }
+  </script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-title">目录</div>
+    <nav id="side-toc"><ul class="toc-side">
+      <li><a href="#tldr-five-answers">TL;DR</a></li>
+      <li><a href="#0-comparison">0 参考项目</a>
+        <ul>
+          <li><a href="#01-overview">0.1 全景</a></li>
+          <li><a href="#02-project-by-project">0.2 逐个介绍</a>
+            <ul>
+              <li><a href="#021-deepseek-harness">0.2.1 DeepSeek Harness — 插件化 harness</a></li>
+              <li><a href="#022-openhands">0.2.2 OpenHands — 平台与控制中心</a></li>
+              <li><a href="#023-openai-agents-sdk">0.2.3 OpenAI Agents SDK — agent 原语</a></li>
+              <li><a href="#024-swe-agent">0.2.4 SWE-agent — 单任务循环与环境</a></li>
+              <li><a href="#025-claude-agent-sdk">0.2.5 Claude Agent SDK — 执行内核</a></li>
+              <li><a href="#026-windmill">0.2.6 Windmill — 调度与隔离执行</a></li>
+              <li><a href="#027-n8n">0.2.7 n8n — 触发与任务 UX</a></li>
+            </ul>
+          </li>
+          <li><a href="#03-take-leave-add">0.3 取什么 / 不取什么 / 我们的增量</a></li>
+          <li><a href="#04-supplementary-refs">0.4 补充参照</a></li>
+        </ul>
+      </li>
+      <li><a href="#1-what-is-agent-harness">1 什么是 Agent Harness</a>
+        <ul>
+          <li><a href="#11-definition">1.1 定义</a></li>
+          <li><a href="#12-four-terms">1.2 四个近义词的边界</a></li>
+          <li><a href="#13-five-things">1.3 一个 harness 必须自己拥有的五件事</a></li>
+          <li><a href="#14-reference-definitions">1.4 参考实现怎么定义 harness</a></li>
+          <li><a href="#15-scope">1.5 我们做什么 / 不做什么</a>
+            <ul>
+              <li><a href="#151-model">1.5.1 模型可替换</a></li>
+              <li><a href="#152-tools">1.5.2 工具四分法</a></li>
+              <li><a href="#153-agent">1.5.3 agent 的定义</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#2-layers">2 几层架构</a>
+        <ul>
+          <li><a href="#21-five-layers">2.1 五层</a></li>
+          <li><a href="#22-layer-responsibilities">2.2 每层职责</a></li>
+          <li><a href="#23-dependency-direction">2.3 依赖方向</a></li>
+          <li><a href="#24-why-five">2.4 为什么是五层</a></li>
+          <li><a href="#25-layer-components">2.5 层 × 组件矩阵</a></li>
+        </ul>
+      </li>
+      <li><a href="#3-components">3 核心组件</a>
+        <ul>
+          <li><a href="#31-nine-components">3.1 九个核心组件</a></li>
+          <li><a href="#32-component-boundaries">3.2 组件边界</a></li>
+          <li><a href="#33-component-call-graph">3.3 组件调用图</a></li>
+          <li><a href="#34-component-rules">3.4 组件规则</a></li>
+        </ul>
+      </li>
+      <li><a href="#4-apis">4 几个窄 API</a>
+        <ul>
+          <li><a href="#41-narrow-api-principles">4.1 窄 API 原则</a></li>
+          <li><a href="#42-eight-apis">4.2 八个窄 API</a></li>
+          <li><a href="#43-api-details">4.3 API 详解</a>
+            <ul>
+              <li><a href="#a1-taskapi">A1 TaskAPI</a></li>
+              <li><a href="#a2-scheduleapi">A2 ScheduleAPI</a></li>
+              <li><a href="#a3-runapi">A3 RunAPI</a></li>
+              <li><a href="#a4-workerapi">A4 WorkerAPI</a></li>
+              <li><a href="#a5-harnessapi">A5 HarnessAPI</a></li>
+              <li><a href="#a6-agentapi">A6 AgentAPI</a></li>
+              <li><a href="#a7-configapi">A7 ConfigAPI</a></li>
+              <li><a href="#a8-controlapi">A8 ControlAPI</a></li>
+            </ul>
+          </li>
+          <li><a href="#44-apis-compose-the-run">4.4 八个 API 怎么拼成一次 run</a></li>
+          <li><a href="#45-why-eight">4.5 为什么是这 8 个</a></li>
+        </ul>
+      </li>
+    </ul></nav>
+  </aside>
+  <main>
+
+<h1>sibot — 技术设计</h1>
+
+<h2 id="tldr-five-answers">TL;DR</h2>
+<div class="card">
+<table class="cols-2">
+<thead><tr><th style="width:24%">问题</th><th>答案</th></tr></thead>
+<tbody>
+<tr><td><strong>sibot 是什么？</strong></td><td>一个 AI 控制中心：在一个 Web 面板里，把任务交给模型执行。</td></tr>
+<tr><td><strong>v1 做什么？</strong></td><td>配置任务，然后触发任务，然后配置 agent 执行这个任务。</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="0-comparison">0 参考项目</h2>
+<div class="card">
+<p><strong>参考项目有七个，不是五个，也不是为了给每个轴拼一个答案。</strong>这些项目把 agent 运行时、控制中心、调度执行和自动化 UX 分别做到了很深的程度，值得完整读。sibot 的第一阶段只做其中很窄的一块：配置任务、触发任务、配置 agent 执行；其余能力不是不重要，只是排在后面。</p>
+
+<h3 id="01-overview">0.1 全景</h3>
+<table class="overview-table">
+<thead><tr><th>项目</th><th>Stars</th><th>语言 / 许可</th><th>定位</th><th>触发</th><th>执行单元</th><th>与 v1 的关系</th></tr></thead>
+<tbody>
+<tr><td><strong>DeepSeek Harness</strong></td><td>268,824</td><td>TS / MIT</td><td>插件化 agent harness</td><td>SDK / headless</td><td>宿主进程 + 沙箱</td><td>高：harness 内部怎么切</td></tr>
+<tr><td><strong>OpenHands</strong></td><td>92,478</td><td>TS / MIT</td><td>自托管 agent 控制中心</td><td>自动化 + 手动</td><td>每个会话一个沙箱</td><td>高：产品形态</td></tr>
+<tr><td><strong>OpenAI Agents SDK</strong></td><td>30,449</td><td>Python / MIT</td><td>轻量 agent 框架</td><td>代码调用</td><td>宿主进程</td><td>中：agent 原语与 tracing</td></tr>
+<tr><td><strong>SWE-agent</strong></td><td>20,712</td><td>Python / MIT</td><td>单任务 coding agent</td><td>CLI</td><td>Docker 环境</td><td>中：trajectory 与评测</td></tr>
+<tr><td><strong>Claude Agent SDK</strong></td><td>8,406</td><td>Python / TS · MIT</td><td>agent harness SDK</td><td>SDK 调用</td><td>宿主进程</td><td>高：执行内核</td></tr>
+<tr><td><strong>Windmill</strong></td><td>18,357</td><td>Rust / Apache-2.0 · AGPL-3.0</td><td>脚本与 cron 平台</td><td>cron + webhook + 手动</td><td>每次运行一个隔离 worker</td><td>高：调度与隔离</td></tr>
+<tr><td><strong>n8n</strong></td><td>209,329</td><td>TS / Sustainable Use</td><td>触发式自动化</td><td>webhook + 定时 + 手动</td><td>进程内 / 队列 worker</td><td>中：任务 UX</td></tr>
+</tbody>
+</table>
+<h3 id="02-project-by-project">0.2 逐个介绍</h3>
+
+<h4 id="021-deepseek-harness">0.2.1 DeepSeek Harness（268,824）— 插件化 harness</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>MIT、TypeScript 的 agent harness，核心口号是 “Everything is a Plugin”，底层是 Cordis 元框架。没有特权内核：agent loop、模型适配、工具注册、会话日志、system prompt 都是可替换插件，仓库有约 255 个包。</td></tr>
+<tr><td>关键机制</td><td>插件树 + 能力接缝；profile / bundle / patch 三层配置层叠；append-only 会话日志；subagent 与 Agent Teams（roster、task board、mailbox）；沙箱后端覆盖 bwrap / Landlock / Seatbelt 与远程；入口有 web / SDK / ACP / headless。</td></tr>
+<tr><td>值得注意的细节</td><td>“模型看到的内容必须可回放”是它的硬约束；插件之间只经声明式契约交互，不互相 import；teams 的状态机（roster / board / mailbox）是现成的多 agent 原语。</td></tr>
+<tr><td>我们取什么</td><td>插件边界、profile / bundle / patch、append-only 日志、provider 抽象、teams 原语。</td></tr>
+<tr><td>我们不取什么</td><td>Cordis 绑定、255 个包的工程预算、“把竞品装进来”的单体运行时哲学。</td></tr>
+<tr><td>v1 用不用</td><td>不直接用。用它的边界划分来决定 sibot 的 task / run / config 怎么切。</td></tr>
+<tr><td>判定</td><td><strong>架构参照第一名</strong> —— 最完整的 harness 内部拆解。</td></tr>
+</tbody>
+</table>
+
+<h4 id="022-openhands">0.2.2 OpenHands（92,478）— 平台与控制中心</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>自托管的 coding agent 控制中心。ACP（Agent-Client Protocol）让它能跑 OpenHands、Claude Code、Codex、Gemini、Pi、OpenCode；沙箱后端覆盖本地、Docker、VM 和云；自带 Slack / GitHub / Linear 自动化和 Web UI。</td></tr>
+<tr><td>关键机制</td><td>会话事件流 + 多后端沙箱；ACP 把第三方 agent 当后端接入；MCP 与内置工具并存；平台级 UI 管理会话、仓库和自动化。</td></tr>
+<tr><td>值得注意的细节</td><td>它把“agent 是什么”和“在哪里跑”彻底分开：同一个会话可以换后端；自动化由平台层触发，而不是写进 agent。</td></tr>
+<tr><td>我们取什么</td><td>平台形态、Web UX、自动化触发、沙箱隔离、按运行的历史。</td></tr>
+<tr><td>我们不取什么</td><td>用 ACP 聚合第三方 agent；v1 不做多后端矩阵的运营面。</td></tr>
+<tr><td>v1 用不用</td><td>用产品形态，不用实现。v1 不做 ACP，也不做多后端。</td></tr>
+<tr><td>判定</td><td><strong>平台参照第一名</strong> —— 证明产品形态，不证明 v1 内部实现。</td></tr>
+</tbody>
+</table>
+
+<h4 id="023-openai-agents-sdk">0.2.3 OpenAI Agents SDK（30,449）— agent 原语</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>轻量 agent 框架（Python）：Agent、handoff、guardrails、sessions（SQLite）、tracing、MCP、function tools。模型以 OpenAI 为主，编排留在代码里。</td></tr>
+<tr><td>关键机制</td><td>agent loop + 工具调用；handoff 把控制权交给另一个 agent；agent-as-tool 把 agent 包成带 schema / timeout / budget 的工具；guardrails 做输入输出校验；tracing 记录 span 树；sessions 持久化对话。</td></tr>
+<tr><td>值得注意的细节</td><td>把多 agent 压缩成两个原语（handoff 与 agent-as-tool），比“图”更容易实现；guardrails 的失败语义是“立即中止”，可以映射到控制面的 policy。</td></tr>
+<tr><td>我们取什么</td><td>agent-as-tool、handoff、guardrails → policy、tracing 的 span 语义、session 持久化。</td></tr>
+<tr><td>我们不取什么</td><td>OpenAI-only、Python-only、编排写在代码里。</td></tr>
+<tr><td>v1 用不用</td><td>v1 没有多 agent；借它的 tracing 与 session 语义。</td></tr>
+<tr><td>判定</td><td><strong>组件级参照</strong> —— 证明少量原语足以表达 agent 循环。</td></tr>
+</tbody>
+</table>
+
+<h4 id="024-swe-agent">0.2.4 SWE-agent（20,712）— 单任务循环与环境</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>单任务 coding agent：ACI（agent-computer interface）、Docker 环境、trajectory 日志、基于 SWE-bench 的评测。</td></tr>
+<tr><td>关键机制</td><td>ACI 把 shell 与编辑器操作收敛成模型可用的一组命令；每次任务一个 Docker 环境；完整记录 action / observation，可回放；固定数据集 + 指标做评测。</td></tr>
+<tr><td>值得注意的细节</td><td>环境即边界：agent 能做什么由 ACI 和环境共同决定；trajectory 是评测与调试的同一份事实源。</td></tr>
+<tr><td>我们取什么</td><td>代码任务循环、环境交互、trajectory 回放、eval / golden set、sandbox exec 语义。</td></tr>
+<tr><td>我们不取什么</td><td>单一 coding 场景、单任务模型。</td></tr>
+<tr><td>v1 用不用</td><td>v1 不做评测；借它的“运行记录 = 可回放事实源”和容器 exec 边界。</td></tr>
+<tr><td>判定</td><td><strong>场景参照</strong> —— 验证 loop + sandbox + eval 三件套。</td></tr>
+</tbody>
+</table>
+
+<h4 id="025-claude-agent-sdk">0.2.5 Claude Agent SDK（8,406）— 执行内核</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>agent harness SDK（Python / TS）：loop、流式、工具循环、subagent、hooks、sessions、permissions、MCP。它与 Claude Code 共享同一套 loop 与权限模型，是 SKILL.md 最自然的执行环境。</td></tr>
+<tr><td>关键机制</td><td>内建 turn / step 循环；工具调用可被 allow / deny / ask；session 可 resume；subagent 隔离上下文；hooks 在工具调用前后插入逻辑。</td></tr>
+<tr><td>值得注意的细节</td><td>权限模型是执行的一部分，不是外层包装；session 与 resume 让长任务可恢复；subagent 让“父 agent 只拿结果”成为默认。</td></tr>
+<tr><td>我们取什么</td><td>loop、流式、工具循环、权限语义、session / resume。</td></tr>
+<tr><td>我们不取什么</td><td>把它当控制中心，或当唯一运行时。</td></tr>
+<tr><td>v1 用不用</td><td>高。它是一次运行的执行内核候选；绑定与打包方式仍未定。</td></tr>
+<tr><td>判定</td><td><strong>执行内核</strong> —— 不 fork、不重写 loop。</td></tr>
+</tbody>
+</table>
+
+<h4 id="026-windmill">0.2.6 Windmill（18,357）— 调度与隔离执行</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>自托管的脚本与流程开发平台：cron / webhook / UI 触发，每次运行在独立 worker 里（Linux 上用 nsjail 隔离），带 Web UI、workspace、RBAC 和审计；原生支持 TS / Python / Go / Bash / SQL。</td></tr>
+<tr><td>关键机制</td><td>调度器 + 队列 + worker；每次执行有独立进程、沙箱和资源上限；job 历史保留输入输出与日志，可重跑；workspace 把脚本、资源、变量放在一起。</td></tr>
+<tr><td>值得注意的细节</td><td>“调度”和“执行”是两套组件，worker 可水平扩展；运行历史是一等页面，不是日志附件；重跑是一等操作。</td></tr>
+<tr><td>我们取什么</td><td>cron 调度、每次运行隔离、运行历史、重跑。</td></tr>
+<tr><td>我们不取什么</td><td>脚本工作流 DAG、多语言运行时矩阵、RBAC 复杂度。</td></tr>
+<tr><td>v1 用不用</td><td>高。v1 的“cron + 每次运行一个容器”直接照这个形状做。</td></tr>
+<tr><td>判定</td><td><strong>执行与隔离参照第一名</strong>。</td></tr>
+</tbody>
+</table>
+
+<h4 id="027-n8n">0.2.7 n8n（209,329）— 触发与任务 UX</h4>
+<table class="cols-2">
+<thead><tr><th style="width:20%">项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>它是什么</td><td>fair-code 自动化工具：节点式工作流、400+ 集成、webhook / 定时 / 手动触发、执行历史、可自托管，支持 queue mode。</td></tr>
+<tr><td>关键机制</td><td>触发器 → 节点链；每次执行记录输入输出；工作流可启停、手动运行、重跑；节点生态负责连接外部系统。</td></tr>
+<tr><td>值得注意的细节</td><td>“启用 / 停用 / 立即运行”三个动作覆盖了大部分日常操作；执行历史直接回答“这次为什么失败”。</td></tr>
+<tr><td>我们取什么</td><td>触发 / 启停 / 手动运行的 UX、执行历史。</td></tr>
+<tr><td>我们不取什么</td><td>节点与集成生态、可视化 DAG 编辑器。</td></tr>
+<tr><td>v1 用不用</td><td>中。只借任务管理 UX，不借执行模型。</td></tr>
+<tr><td>判定</td><td><strong>任务管理 UX 参照</strong> —— 不是执行或架构参照。</td></tr>
+</tbody>
+</table>
+
+<h3 id="03-take-leave-add">0.3 取什么 / 不取什么 / 我们的增量</h3>
+<table class="take-table">
+<thead><tr><th>项目</th><th>取什么</th><th>不取什么</th><th>我们的增量</th></tr></thead>
+<tbody>
+<tr><td><strong>DeepSeek Harness</strong></td><td>插件边界、profile / bundle / patch、append-only 日志、provider 抽象、teams 原语</td><td>Cordis 绑定、255 包的工程预算</td><td>用它的边界划分来切 task / run / config</td></tr>
+<tr><td><strong>OpenHands</strong></td><td>平台形态、Web UX、自动化触发、沙箱隔离、按运行的历史</td><td>ACP 聚合第三方 agent、多后端运营面</td><td>一个任务一个 skill；按任务选模型</td></tr>
+<tr><td><strong>OpenAI Agents SDK</strong></td><td>agent-as-tool、handoff、guardrails → policy、tracing span、session</td><td>OpenAI-only、Python-only、编排写在代码里</td><td>把 guardrails / trace 语义映射到控制面</td></tr>
+<tr><td><strong>SWE-agent</strong></td><td>trajectory 回放、eval / golden set、sandbox exec 语义</td><td>单一 coding 场景</td><td>运行记录与容器边界</td></tr>
+<tr><td><strong>Claude Agent SDK</strong></td><td>loop、流式、工具循环、权限、session / resume</td><td>当控制中心、当唯一运行时</td><td>任务配置、调度、运行历史、provider 选择</td></tr>
+<tr><td><strong>Windmill</strong></td><td>cron 调度、每次运行隔离、运行历史、重跑</td><td>脚本 DAG、多语言矩阵、RBAC</td><td>skill 是单位，模型是参数</td></tr>
+<tr><td><strong>n8n</strong></td><td>触发 / 启停 / 手动运行 UX、执行历史</td><td>节点生态、可视化 DAG</td><td>cron 优先，无图</td></tr>
+</tbody>
+</table>
+
+<h3 id="04-supplementary-refs">0.4 补充参照</h3>
+<table class="ref-table">
+<thead><tr><th>项目</th><th>Stars</th><th>它是什么</th><th>取什么 / 不取什么</th></tr></thead>
+<tbody>
+<tr><td><strong>LiteLLM</strong></td><td>62,527</td><td>多 provider 模型网关：一个接口覆盖多家 provider，带路由、密钥、成本。</td><td>取模型轴的契约（统一接口、provider 路由、用量）；暂不取它的代理部署形态。</td></tr>
+<tr><td><strong>Airflow</strong></td><td>47,345</td><td>cron / DAG 调度器，任务在容器里执行。</td><td>取调度语义和“任务跑在自己的容器里”；不取 DAG 与 operator 模型。</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<strong>一句话：</strong>sibot 的第一阶段只做一条最窄的路径 —— 配置任务、触发任务、配置 agent 执行；这些参照决定的是路径两侧还留了什么。
+</div>
+</div>
+
+<h2 id="1-what-is-agent-harness">1 什么是 Agent Harness</h2>
+<div class="card">
+<h3 id="11-definition">1.1 定义</h3>
+<p><strong>Agent harness 是把模型变成 agent 的运行时。</strong>模型本身只做输入到输出；harness 决定模型看到什么上下文、能调用什么工具、会话如何持久、副作用如何受限、循环何时停止。它不生产智能，它组织智能。</p>
+<pre>harness = loop(model, tools, session, sandbox) + policy + observability</pre>
+<table class="cols-2">
+<thead><tr><th>组成</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><strong>loop</strong></td><td>turn / step / tool call 的循环</td></tr>
+<tr><td><strong>model</strong></td><td>模型通道，可替换</td></tr>
+<tr><td><strong>tools</strong></td><td>工具注册与调用</td></tr>
+<tr><td><strong>session</strong></td><td>对话与事件的事实源</td></tr>
+<tr><td><strong>sandbox</strong></td><td>文件、进程、网络的边界</td></tr>
+<tr><td><strong>policy</strong></td><td>权限、预算、审批</td></tr>
+<tr><td><strong>observability</strong></td><td>trace、usage、日志</td></tr>
+</tbody>
+</table>
+
+<h3 id="12-four-terms">1.2 四个近义词的边界</h3>
+<table class="cols-3">
+<thead><tr><th>词</th><th>它是什么</th><th>sibot 的取舍</th></tr></thead>
+<tbody>
+<tr><td><strong>Harness</strong></td><td>执行 agent 循环的运行时：loop + context + tools + session + sandbox</td><td>我们不做；用外部 harness</td></tr>
+<tr><td><strong>Framework</strong></td><td>供你组合的抽象库：graph、chain、agent 类</td><td>我们不做通用编排库</td></tr>
+<tr><td><strong>Platform</strong></td><td>harness + 控制平面 + 入口 + 运营</td><td><strong>sibot 是这个形态</strong></td></tr>
+<tr><td><strong>Runtime</strong></td><td>进程 / 宿主环境（Node、容器、VM）</td><td>我们只依赖，不重造</td></tr>
+</tbody>
+</table>
+
+<h3 id="13-five-things">1.3 一个 harness 必须自己拥有的五件事</h3>
+<table class="cols-3">
+<thead><tr><th>职责</th><th>具体内容</th><th>不拥有的后果</th></tr></thead>
+<tbody>
+<tr><td><strong>循环</strong></td><td>turn / step / tool call 的生命周期</td><td>模型只能一次性问答，无法完成多步任务</td></tr>
+<tr><td><strong>上下文</strong></td><td>system prompt、history、tool schema 的组装</td><td>行为不可复现，无法调试</td></tr>
+<tr><td><strong>会话</strong></td><td>append-only 事实源，可 resume / fork</td><td>崩溃即丢失，无法恢复</td></tr>
+<tr><td><strong>沙箱</strong></td><td>文件、进程、网络边界，资源上限</td><td>工具即任意代码执行，无法运营</td></tr>
+<tr><td><strong>治理</strong></td><td>预算、并发、审批、审计</td><td>成本与风险不可控，不能上生产</td></tr>
+</tbody>
+</table>
+<p>这五件事在 harness 内；模型、工具、知识、入口在 harness 外，通过窄接口接入。</p>
+
+<h3 id="14-reference-definitions">1.4 参考实现怎么定义 harness</h3>
+<table class="ref-table">
+<thead><tr><th>参考</th><th>Stars</th><th>它的 harness 核心</th><th>我们取什么 / 不取什么</th></tr></thead>
+<tbody>
+<tr><td><strong>DeepSeek Harness</strong></td><td>268,824</td><td>插件树：loop、模型适配、工具、session log 全是插件</td><td>取插件边界与 append-only；不取 Cordis 绑定</td></tr>
+<tr><td><strong>Claude Agent SDK</strong></td><td>8,406</td><td>loop + 流式 + tool loop + permissions + session</td><td>取 loop / 权限 / session；不把它当唯一运行时</td></tr>
+<tr><td><strong>OpenAI Agents SDK</strong></td><td>30,449</td><td>agent loop + handoff + guardrails + tracing</td><td>取 agent-as-tool / tracing；不取 OpenAI-only</td></tr>
+<tr><td><strong>SWE-agent</strong></td><td>20,712</td><td>ACI + 单任务循环 + trajectory</td><td>取 trajectory / 沙箱 exec；不取单一场景</td></tr>
+<tr><td><strong>OpenHands</strong></td><td>92,478</td><td>agent server + 多后端沙箱 + ACP</td><td>取沙箱后端；不取第三方 agent 聚合</td></tr>
+</tbody>
+</table>
+
+<h3 id="15-scope">1.5 我们做什么 / 不做什么</h3>
+<table class="cols-2">
+<thead><tr><th>做</th><th>不做</th></tr></thead>
+<tbody>
+<tr><td>控制中心：任务、调度、认证、运行历史</td><td>不做 harness：loop、工具执行、session 语义</td></tr>
+<tr><td>多 agent / 多模型</td><td>不自研模型</td></tr>
+<tr><td>把每次运行交给外部 harness</td><td>不做 agent 框架或编排库</td></tr>
+<tr><td>运行隔离与运行记录</td><td>不做通用 DAG 工作流</td></tr>
+<tr><td>单用户、Web UI</td><td>不做多租户平台</td></tr>
+</tbody>
+</table>
+
+<h4 id="151-model">1.5.1 模型可替换</h4>
+<p><code>Model = provider + model</code>。模型是 agent 的配置项，不是写死在任务里；换模型不需要改任务。多个 agent 可以用不同模型，这就是“多模型”。</p>
+
+<h4 id="152-tools">1.5.2 工具四分法</h4>
+<table class="tools-table">
+<thead><tr><th>类型</th><th>是什么</th><th>谁提供</th><th>sibot 配不配</th></tr></thead>
+<tbody>
+<tr><td><strong>Native</strong></td><td>harness 内置工具：读文件、跑命令、搜索等</td><td>harness</td><td>不配，随 harness 来</td></tr>
+<tr><td><strong>MCP</strong></td><td>外部 MCP server 提供的工具</td><td>外部 server</td><td>配（server / 连接）</td></tr>
+<tr><td><strong>Skill</strong></td><td>外部 <code>SKILL.md</code> 目录，一段可复用的流程或知识</td><td>外部目录</td><td>配（目录）</td></tr>
+<tr><td><strong>Agent</strong></td><td>另一个 agent，作为工具被调用（agent-as-tool / subagent）</td><td>sibot 里的 agent</td><td>配（引用）</td></tr>
+</tbody>
+</table>
+<p>skill 严格说不是“工具”，而是一段流程 / 知识；harness 通过一个 Skill 工具把它暴露出来。</p>
+
+<h4 id="153-agent">1.5.3 agent 的定义</h4>
+<pre>Agent = harness + model + tools(native / MCP / skill / agent)</pre>
+<p>sibot 配 model 和 MCP / skill / agent 三类外部能力；native 工具和 loop 由 harness 负责。</p>
+
+<div class="note">
+所以：<strong>sibot 是 harness 之上的控制中心。</strong>harness 执行智能，sibot 组织智能。
+</div>
+<pre>sibot   = control plane(任务 / 调度 / 认证 / 运行历史 / 多 agent / 多模型)
+harness = 外部依赖(loop + policy + observability)</pre>
+</div>
+
+<h2 id="2-layers">2 几层架构</h2>
+<div class="card">
+<h3 id="21-five-layers">2.1 五层</h3>
+<div class="mermaid">
+flowchart TB
+  L1["1 Entry — Web UI / REST / Auth / SSE"]
+  L2["2 Control — 任务 / cron / 触发 / run 状态机"]
+  L3["3 Execution — worker / 容器 / harness adapter / model / tool 注入"]
+  L4["4 Config — agent / model / tool / policy"]
+  L5["5 Control Plane — trace / usage / audit / eval"]
+  L1 --> L2
+  L2 --> L3
+  L3 --> L4
+  L2 --> L5
+  L3 --> L5
+</div>
+<p>Execution 里的 <strong>harness adapter</strong> 是边界：上下文组装与工具循环由外部 harness 实现，sibot 只负责把 agent 配置、任务内容、tool schema 和 policy 交给它。</p>
+
+<h3 id="22-layer-responsibilities">2.2 每层职责</h3>
+<table class="cols-3">
+<thead><tr><th>层</th><th>职责</th><th>不做什么</th></tr></thead>
+<tbody>
+<tr><td><strong>1 Entry</strong></td><td>Web UI、REST API、认证、SSE / 事件推送</td><td>不跑任务、不碰模型</td></tr>
+<tr><td><strong>2 Control</strong></td><td>任务定义与启停、cron 调度、手动触发、run 状态机、运行历史查询</td><td>不执行、不直接调模型</td></tr>
+<tr><td><strong>3 Execution</strong></td><td>run worker、每次 run 一个容器、harness adapter（上下文组装 / 工具循环）、model 解析、tool 注入、沙箱策略</td><td>不定义任务、不管认证</td></tr>
+<tr><td><strong>4 Config</strong></td><td>agent、model / provider、tool（MCP / skill / agent）、policy、凭据引用</td><td>不参与运行时决策</td></tr>
+<tr><td><strong>5 Control Plane</strong></td><td>trace、usage、audit、eval</td><td>不进入业务判断链，只横切</td></tr>
+</tbody>
+</table>
+
+<h3 id="23-dependency-direction">2.3 依赖方向</h3>
+<ul>
+<li>只能向下：Entry → Control → Execution → Config。</li>
+<li>Control Plane 横切：Control 和 Execution 向它写事件与 span。</li>
+<li>只有 <code>Execution/harness-adapter</code> 允许 import 外部 harness SDK。</li>
+<li>Config 只被读，不 import 运行时组件。</li>
+<li>存储、队列、密钥、日志是基础设施，不是架构层。</li>
+<li>反向依赖在 CI 直接失败。</li>
+</ul>
+
+<h3 id="24-why-five">2.4 为什么是五层</h3>
+<table class="cols-2">
+<thead><tr><th>层数</th><th>判断</th></tr></thead>
+<tbody>
+<tr><td>三层（Entry / Control / Execution）</td><td>缺配置与治理：凭据、policy、trace、eval 无处安放</td></tr>
+<tr><td><strong>五层（本方案）</strong></td><td>每层可独立替换：换 UI、换容器 / harness、换配置格式、换 eval 口径；控制平面不污染执行</td></tr>
+<tr><td>六层以上（把 model gateway / tool 注入 / 存储单列）</td><td>过度分层：它们是 Execution 的内部插件或基础设施，不是架构层</td></tr>
+</tbody>
+</table>
+
+<h3 id="25-layer-components">2.5 层 × 组件矩阵</h3>
+<table class="cols-3">
+<thead><tr><th>层</th><th>组件</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td>Entry</td><td>WebUI · API · Auth</td><td>浏览器、REST、认证、SSE</td></tr>
+<tr><td>Control</td><td>TaskRegistry · Scheduler · RunManager</td><td>任务、cron、触发、run 状态</td></tr>
+<tr><td>Execution</td><td>RunWorker · Container · HarnessAdapter · ModelResolver · ToolInjector</td><td>执行一次 run</td></tr>
+<tr><td>Config</td><td>ConfigStore</td><td>agent / model / tool / policy 的读取与校验</td></tr>
+<tr><td>Control Plane</td><td>Trace · Usage · Audit · Eval</td><td>横切记录与评测</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="3-components">3 核心组件</h2>
+<div class="card">
+<h3 id="31-nine-components">3.1 九个核心组件</h3>
+<table class="components-table">
+<thead><tr><th>#</th><th>组件</th><th>一句话职责</th><th>不做什么</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td><strong>Entry</strong></td><td>Web UI、REST API、认证、SSE</td><td>不跑任务、不碰模型</td></tr>
+<tr><td>C2</td><td><strong>TaskRegistry</strong></td><td>任务定义与启停的所有者</td><td>不调度、不执行</td></tr>
+<tr><td>C3</td><td><strong>Scheduler</strong></td><td>cron、手动触发、触发队列</td><td>不执行、不管 run 状态</td></tr>
+<tr><td>C4</td><td><strong>RunManager</strong></td><td>run 状态机与运行历史</td><td>不执行、不调模型</td></tr>
+<tr><td>C5</td><td><strong>RunWorker</strong></td><td>每次 run 一个容器，负责启动与回收</td><td>不理解 agent 配置</td></tr>
+<tr><td>C6</td><td><strong>HarnessAdapter</strong></td><td>调用外部 harness：上下文组装、工具循环、沙箱策略</td><td>不定义任务、不做调度</td></tr>
+<tr><td>C7</td><td><strong>AgentBuilder</strong></td><td>把 agent 配置组装成 harness 输入（model / tools / policy）</td><td>不执行 loop</td></tr>
+<tr><td>C8</td><td><strong>ConfigStore</strong></td><td>agent / model / tool / policy 的读写与校验</td><td>不参与运行时决策</td></tr>
+<tr><td>C9</td><td><strong>ControlPlane</strong></td><td>trace、usage、audit、eval</td><td>不进入业务判断链</td></tr>
+</tbody>
+</table>
+
+<h3 id="32-component-boundaries">3.2 组件边界</h3>
+<div class="domain-grid">
+  <div class="entity"><div class="entity-name">C1 Entry</div><div class="entity-desc">唯一的产品入口</div><ul class="entity-fields">
+    <li>输入：HTTP / 浏览器</li><li>输出：API 响应 / SSE</li><li>依赖：C2 / C4 / C9</li><li>不依赖：C5 / C6</li></ul></div>
+  <div class="entity"><div class="entity-name">C2 TaskRegistry</div><div class="entity-desc">任务定义的所有者</div><ul class="entity-fields">
+    <li>输入：task CRUD / 启停</li><li>输出：task 定义</li><li>依赖：C8</li><li>不依赖：C3 / C5</li></ul></div>
+  <div class="entity"><div class="entity-name">C3 Scheduler</div><div class="entity-desc">时间的所有者</div><ul class="entity-fields">
+    <li>输入：cron / 手动触发</li><li>输出：trigger 事件</li><li>依赖：C2 / C4</li><li>不依赖：C6</li></ul></div>
+  <div class="entity"><div class="entity-name">C4 RunManager</div><div class="entity-desc">run 状态与历史</div><ul class="entity-fields">
+    <li>输入：trigger / run 事件</li><li>输出：run 状态 / 历史</li><li>依赖：C5 / C8 / C9</li><li>不依赖：C6</li></ul></div>
+  <div class="entity"><div class="entity-name">C5 RunWorker</div><div class="entity-desc">一次 run 的执行者</div><ul class="entity-fields">
+    <li>输入：run 请求</li><li>输出：事件 / 结果</li><li>依赖：C6 / C7 / C9</li><li>不依赖：C2 / C3</li></ul></div>
+  <div class="entity"><div class="entity-name">C6 HarnessAdapter</div><div class="entity-desc">harness 的唯一边界</div><ul class="entity-fields">
+    <li>输入：agent bundle + task</li><li>输出：loop 事件 / 结果</li><li>依赖：外部 harness SDK</li><li>不依赖：C1–C5</li></ul></div>
+  <div class="entity"><div class="entity-name">C7 AgentBuilder</div><div class="entity-desc">把配置组装成 harness 输入</div><ul class="entity-fields">
+    <li>输入：agent id</li><li>输出：model + tools + policy</li><li>依赖：C8</li><li>不依赖：C5</li></ul></div>
+  <div class="entity"><div class="entity-name">C8 ConfigStore</div><div class="entity-desc">配置的事实源</div><ul class="entity-fields">
+    <li>输入：agent / model / tool / policy</li><li>输出：校验后的配置</li><li>依赖：存储</li><li>不依赖：运行时组件</li></ul></div>
+  <div class="entity"><div class="entity-name">C9 ControlPlane</div><div class="entity-desc">观测与治理</div><ul class="entity-fields">
+    <li>输入：span / usage / audit event</li><li>输出：trace / usage / audit / eval</li><li>依赖：存储 / OTel</li><li>不依赖：业务状态</li></ul></div>
+</div>
+
+<h3 id="33-component-call-graph">3.3 组件调用图</h3>
+<div class="mermaid">
+flowchart LR
+  E[C1 Entry] --> T[C2 TaskRegistry]
+  E --> R[C4 RunManager]
+  S[C3 Scheduler] --> T
+  S --> R
+  R --> W[C5 RunWorker]
+  W --> A[C7 AgentBuilder]
+  W --> H[C6 HarnessAdapter]
+  A --> C[C8 ConfigStore]
+  W --> P[C9 ControlPlane]
+  R --> P
+  H --> X["外部 harness SDK"]
+</div>
+
+<h3 id="34-component-rules">3.4 组件规则</h3>
+<ul>
+<li><strong>一个组件一个所有者</strong>：每类状态只有一个组件写。</li>
+<li><strong>组件不互相 import</strong>：只经窄 API 或事件交互。</li>
+<li><strong>组件可替换</strong>：C1 换 UI、C5 换容器运行时、C6 换 harness、C8 换存储。</li>
+<li><strong>harness 只在 C6 出现</strong>：任何其他组件不得 import 外部 harness SDK。</li>
+<li><strong>新增能力是组件或插件</strong>：不改 C5 / C6 的 loop 语义。</li>
+</ul>
+</div>
+
+<h2 id="4-apis">4 几个窄 API</h2>
+<div class="card">
+<h3 id="41-narrow-api-principles">4.1 窄 API 原则</h3>
+<table class="cols-2">
+<thead><tr><th>原则</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td>一个面一个所有者</td><td>每个组件只暴露一个 API 面，不提供 doEverything</td></tr>
+<tr><td>按面计数</td><td>本文的“8 个”指 8 个面；按方法数是 18 个，两者不矛盾</td></tr>
+<tr><td>JSON Schema 跨边界</td><td>不传内部类型；跨组件只传可序列化结构</td></tr>
+<tr><td>additive-only</td><td>加字段不改语义；破坏性变更走 major</td></tr>
+<tr><td>错误是返回值</td><td>typed code + retryable，不靠异常控制流</td></tr>
+<tr><td>可替换</td><td>API 稳定，实现可变</td></tr>
+</tbody>
+</table>
+
+<h3 id="42-eight-apis">4.2 八个窄 API</h3>
+<table class="api-table">
+<thead><tr><th>#</th><th>API</th><th>方法</th><th>谁调</th></tr></thead>
+<tbody>
+<tr><td>A1</td><td><code>TaskAPI</code>（C2）</td><td><code>create / update / setEnabled / list</code></td><td>Entry</td></tr>
+<tr><td>A2</td><td><code>ScheduleAPI</code>（C3）</td><td><code>set / clear</code></td><td>TaskRegistry</td></tr>
+<tr><td>A3</td><td><code>RunAPI</code>（C4）</td><td><code>start / get / list / cancel</code></td><td>Entry / Scheduler</td></tr>
+<tr><td>A4</td><td><code>WorkerAPI</code>（C5）</td><td><code>execute</code></td><td>RunManager</td></tr>
+<tr><td>A5</td><td><code>HarnessAPI</code>（C6）</td><td><code>run</code></td><td>RunWorker</td></tr>
+<tr><td>A6</td><td><code>AgentAPI</code>（C7）</td><td><code>build</code></td><td>RunWorker</td></tr>
+<tr><td>A7</td><td><code>ConfigAPI</code>（C8）</td><td><code>get / put / validate</code></td><td>TaskRegistry / AgentBuilder</td></tr>
+<tr><td>A8</td><td><code>ControlAPI</code>（C9）</td><td><code>record / query</code></td><td>所有组件（只写）</td></tr>
+</tbody>
+</table>
+
+<h3 id="43-api-details">4.3 API 详解</h3>
+
+<h4 id="a1-taskapi">A1 TaskAPI — 任务定义</h4>
+<p>任务定义与启停的唯一入口。不负责调度，也不负责执行。</p>
+<pre>create(task) → taskId
+update(taskId, patch) → Task
+setEnabled(taskId, bool) → void
+list(query) → Task[]</pre>
+
+<h4 id="a2-scheduleapi">A2 ScheduleAPI — 调度</h4>
+<p>把任务的时间信息变成定时器；只管理 schedule，不创建 run。</p>
+<pre>set(taskId, cron) → void
+clear(taskId) → void</pre>
+
+<h4 id="a3-runapi">A3 RunAPI — run 生命周期</h4>
+<p>run 状态机的唯一写入口；cron 到点和手动触发都走 <code>start</code>。</p>
+<pre>start(taskId, reason) → runId
+get(runId) → Run
+list(query) → Run[]
+cancel(runId) → void</pre>
+
+<h4 id="a4-workerapi">A4 WorkerAPI — 执行</h4>
+<p>在一个容器里执行一次 run；容器生命周期归它，agent 语义不归它。</p>
+<pre>execute(runId) → RunResult</pre>
+
+<h4 id="a5-harnessapi">A5 HarnessAPI — harness 边界</h4>
+<p>唯一允许 import 外部 harness 的地方；返回事件流，不解释事件语义。</p>
+<pre>run(bundle, input) → AsyncIterable&lt;Event&gt;</pre>
+
+<h4 id="a6-agentapi">A6 AgentAPI — 组装</h4>
+<p>把 agent id 解析成 harness 可用的 bundle：model + tools + policy。</p>
+<pre>build(agentId) → HarnessBundle</pre>
+
+<h4 id="a7-configapi">A7 ConfigAPI — 配置</h4>
+<p>agent / model / tool / policy 的读写；只做校验，不做运行时决策。</p>
+<pre>get(kind, id) → Config
+put(kind, id, config) → void
+validate(config) → Result</pre>
+
+<h4 id="a8-controlapi">A8 ControlAPI — 记录</h4>
+<p>所有组件的只写出口；trace / usage / audit / eval 都在这一面后面。</p>
+<pre>record(event) → void
+query(q) → Result</pre>
+
+<h3 id="44-apis-compose-the-run">4.4 八个 API 怎么拼成一次 run</h3>
+<div class="mermaid">
+sequenceDiagram
+  participant S as C3 Scheduler
+  participant E as C1 Entry
+  participant R as C4 RunManager
+  participant W as C5 RunWorker
+  participant A as C7 AgentBuilder
+  participant C as C8 ConfigStore
+  participant H as C6 HarnessAdapter
+  participant P as C9 ControlPlane
+
+  S->>R: A3.start(taskId, "cron")
+  E->>R: A3.start(taskId, "manual")
+  R->>R: 创建 run
+  R->>W: A4.execute(runId)
+  W->>A: A6.build(agentId)
+  A->>C: A7.get(agent / model / tool / policy)
+  C-->>A: config
+  A-->>W: HarnessBundle
+  W->>H: A5.run(bundle, input)
+  loop 每个事件
+    H-->>W: Event
+    W->>P: A8.record(event)
+  end
+  H-->>W: RunResult
+  W-->>R: RunResult
+  R->>P: A8.record(run finished)
+  R-->>E: SSE 状态更新
+</div>
+
+<h3 id="45-why-eight">4.5 为什么是这 8 个</h3>
+<ul>
+<li>对应 8 个内部组件（C2–C9），一个组件一个面。</li>
+<li>C1 Entry 不算：它对外暴露 REST / SSE，不是内部窄 API。</li>
+<li>每个面只做一件事；复合流程由调用方组合。</li>
+<li>8 个面、18 个方法；按面数说 8，按方法数说 18。</li>
+<li>新增能力 = 新组件或新实现，不加面。</li>
+</ul>
+</div>
+
+  </main>
+</div>
+</body>
+</html>
