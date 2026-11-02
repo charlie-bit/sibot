@@ -471,6 +471,10 @@
 
 <h4 id="151-model">1.5.1 模型可替换</h4>
 <p><code>Model = provider + model</code>。模型是 agent 的配置项，不是写死在任务里；换模型不需要改任务。多个 agent 可以用不同模型，这就是“多模型”。</p>
+<p>v1 的 harness 默认是 <strong>Claude Agent SDK</strong>，它只认 <code>ANTHROPIC_BASE_URL</code> / <code>ANTHROPIC_API_KEY</code>。只要 provider 兼容 Anthropic Messages 协议，或经网关做协议翻译，就能接入——GLM、DeepSeek、Kimi 等国产模型已经提供兼容端点。</p>
+<div class="note">
+协议兼容不等于能力等价：tool use、streaming、cache、thinking、skill 行为都可能打折。每接一个 provider 都要单独做兼容性验证。
+</div>
 
 <h4 id="152-tools">1.5.2 工具四分法</h4>
 <table class="tools-table">
@@ -519,7 +523,7 @@ flowchart TB
 <tbody>
 <tr><td><strong>1 Entry</strong></td><td>Web UI、REST API、认证、SSE / 事件推送</td><td>不跑任务、不碰模型</td></tr>
 <tr><td><strong>2 Control</strong></td><td>任务定义与启停、cron 调度、手动触发、run 状态机、运行历史查询</td><td>不执行、不直接调模型</td></tr>
-<tr><td><strong>3 Execution</strong></td><td>run worker、每次 run 一个容器、harness adapter（上下文组装 / 工具循环）、model 解析、tool 注入、沙箱策略</td><td>不定义任务、不管认证</td></tr>
+<tr><td><strong>3 Execution</strong></td><td>run worker、每次 run 一个容器、harness adapter（上下文组装 / 工具循环）、agent 组装（model / tool / policy）、沙箱策略</td><td>不定义任务、不管认证</td></tr>
 <tr><td><strong>4 Config</strong></td><td>agent、model / provider、tool（MCP / skill / agent）、policy、凭据引用</td><td>不参与运行时决策</td></tr>
 <tr><td><strong>5 Control Plane</strong></td><td>trace、usage、audit、eval</td><td>不进入业务判断链，只横切</td></tr>
 </tbody>
@@ -551,7 +555,7 @@ flowchart TB
 <tbody>
 <tr><td>Entry</td><td>WebUI · API · Auth</td><td>浏览器、REST、认证、SSE</td></tr>
 <tr><td>Control</td><td>TaskRegistry · Scheduler · RunManager</td><td>任务、cron、触发、run 状态</td></tr>
-<tr><td>Execution</td><td>RunWorker · Container · HarnessAdapter · ModelResolver · ToolInjector</td><td>执行一次 run</td></tr>
+<tr><td>Execution</td><td>RunWorker · Container · HarnessAdapter · AgentBuilder</td><td>执行一次 run</td></tr>
 <tr><td>Config</td><td>ConfigStore</td><td>agent / model / tool / policy 的读取与校验</td></tr>
 <tr><td>Control Plane</td><td>Trace · Usage · Audit · Eval</td><td>横切记录与评测</td></tr>
 </tbody>
