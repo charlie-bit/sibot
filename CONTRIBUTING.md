@@ -33,6 +33,7 @@ public git history.
 | **Secrets** | API keys, tokens, PATs, private keys, certificates, passwords, session cookies, `.env` files, database dumps with credentials |
 | **Personal data** | Customer or user records, emails, phone numbers, wallet addresses tied to a person, account IDs, IP logs, screenshots containing real user info |
 | **Employer / internal material** | Internal hostnames or URLs, internal ticket or repo IDs, unpublished roadmaps, internal Slack threads, non-public vendor contracts |
+| **Other projects** | Code, docs, config, names, or links from any project other than sibot — including private, employer, or sibling repositories. This repo is self-contained: no shared files, no copied modules, no references to another codebase |
 | **Licensed third-party code** | Copied source that is not license-compatible with this project, or copied without its required attribution |
 | **Generated output** | Build artifacts, compiled binaries, `node_modules`/`vendor` trees, coverage reports, local caches, editor state files |
 | **Large binaries** | Images, videos, datasets, model weights — host them elsewhere and link them, unless the project explicitly decides otherwise |
@@ -53,7 +54,21 @@ public git history.
 
 ---
 
-## 3. Before you commit
+## 3. Language
+
+**Everything committed is English.** No exceptions, including:
+
+- identifiers, variable and function names,
+- comments and doc comments,
+- error messages, log output, and user-facing strings,
+- documentation, commit messages, issue and pull request text.
+
+Chinese or any other language belongs in local notes that are not committed
+(`.doc/local/` is gitignored for exactly this).
+
+---
+
+## 4. Before you commit
 
 ```bash
 git status              # know exactly what you are staging
@@ -66,19 +81,20 @@ scratch files get published.
 
 ---
 
-## 4. Branches
+## 5. Branches
 
 - `main` is the release branch. Non-trivial work goes through a branch and a pull request.
 - Branch name: `<type>/<short-slug>` — e.g. `feat/slack-ingest`, `fix/retry-loop`, `docs/contributing`.
-- `<type>` uses the same vocabulary as commit types (§5).
+- `<type>` uses the same vocabulary as commit types (§6).
 - Keep branches short-lived. Rebase on `main` rather than merging `main` back in.
 - External contributors: fork, then PR from the fork.
 
 ---
 
-## 5. Commit messages
+## 6. Commit messages
 
 sibot follows [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+**English only, and short.**
 
 ```
 <type>(<scope>): <subject>
@@ -93,7 +109,7 @@ sibot follows [Conventional Commits 1.0.0](https://www.conventionalcommits.org/e
 - Imperative mood, present tense: `add`, not `added` / `adds`.
 - Lowercase after the colon, no trailing period.
 - ≤ 72 characters. One line, no wrapping.
-- English. (Docs inside `.doc/` may be Chinese; commit messages are English.)
+- English.
 - Describe the change, not the process: `fix(retry): cap backoff at 60s`, never `fix bug` / `update` / `wip`.
 
 ### Types
@@ -117,15 +133,16 @@ Optional but encouraged: the module, package, or area touched — `feat(api):`, 
 
 ### Body
 
-- Explain **why**, not what — the diff already shows what.
+- **Keep it short: subject only.** Add a body only when the reason for the change is not
+  obvious from the code.
+- When there is a body: explain **why**, not what — the diff already shows what.
 - Wrap at 72 characters.
-- Include the constraint that made the obvious approach wrong, if there was one.
 
 ### Footers
 
 - `BREAKING CHANGE: <what breaks and how to migrate>` — for any incompatible change.
 - `Refs: #123` / `Closes: #123` — link the issue.
-- `Co-Authored-By: <name> <email>` — co-authors, including AI assistance (§6).
+- `Co-Authored-By: <name> <email>` — co-authors, including AI assistance (§7).
 
 ### Never
 
@@ -135,7 +152,7 @@ Optional but encouraged: the module, package, or area touched — `feat(api):`, 
 
 ---
 
-## 6. AI-assisted contributions
+## 7. AI-assisted contributions
 
 AI-assisted code is welcome. The rules:
 
@@ -151,7 +168,7 @@ AI-assisted code is welcome. The rules:
 
 ---
 
-## 7. Pull requests
+## 8. Pull requests
 
 - Title follows the commit convention: `feat(scope): summary`.
 - Body answers: what changed, why, how it was tested, what could break.
@@ -163,8 +180,9 @@ AI-assisted code is welcome. The rules:
 
 ---
 
-## 8. Code expectations
+## 9. Code expectations
 
+- English for all code and comments (§3).
 - Match the surrounding style; do not reformat unrelated code in a feature commit.
 - No dead code, no commented-out blocks, no leftover debugging.
 - Validate untrusted input at the boundary; never build SQL, shell commands, paths, or HTML
@@ -174,16 +192,17 @@ AI-assisted code is welcome. The rules:
 
 ---
 
-## 9. Licensing of contributions
+## 10. Licensing of contributions
 
-By submitting a pull request you agree that your contribution is licensed under the
-project's license (see `LICENSE`) and that you have the right to submit it.
+sibot is released under the [MIT License](LICENSE). By submitting a pull request you agree
+that your contribution is licensed under the same terms and that you have the right to
+submit it.
 
 Do not add code you did not write unless its license is compatible and its attribution is
 preserved.
 
 ---
 
-## 10. Security issues
+## 11. Security issues
 
 Do not open a public issue for a vulnerability. Follow [`SECURITY.md`](SECURITY.md).

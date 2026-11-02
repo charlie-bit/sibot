@@ -32,6 +32,9 @@ tmp/
 scratch/
 .cache/
 
+# ---- Local notes (non-English scratch, never committed — CONTRIBUTING.md §3) ----
+.doc/local/
+
 # ---- Language / build (uncomment as the stack lands) ----
 # node
 # node_modules/

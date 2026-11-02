@@ -1,32 +1,35 @@
-# sibot 文档
+# sibot documentation
 
-> 项目定位待定（TODO）。这里先作为所有设计与决策文档的落点。
+> Project scope is still undecided (TODO). This folder holds design and decision records.
 
-## 仓库规则（先读这个）
+## Repository rules (read first)
 
-| 文件 | 作用 |
-|------|------|
-| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | 提交内容禁区、分支、commit 规范、PR 规范、AI 辅助声明 |
-| [`SECURITY.md`](../SECURITY.md) | 漏洞私密上报流程 |
-| [`.github/pull_request_template.md`](../.github/pull_request_template.md) | PR 模板（自动带出） |
-| [`.gitignore`](../.gitignore) | 密钥/产物防误提交第一道防线 |
+| File | Purpose |
+|------|---------|
+| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Forbidden content, language policy, branches, commit format, PR flow, AI disclosure |
+| [`SECURITY.md`](../SECURITY.md) | Private vulnerability reporting |
+| [`LICENSE`](../LICENSE) | MIT |
+| [`.github/pull_request_template.md`](../.github/pull_request_template.md) | PR template (applied automatically) |
+| [`.gitignore`](../.gitignore) | First line of defence against committing secrets and artifacts |
 
-一句话摘要：**公开仓库、历史不可撤回** → 密钥/个人信息/雇主内部信息零容忍；commit 用
-`type(scope): subject`（Conventional Commits，英文，≤72 字符）；一个 commit 一个逻辑变更；
-用了 AI 就在 trailer 里写 `Co-Authored-By` 并给 PR 打 `ai-assisted`。
+Short version: the history of a public repository cannot be unpublished, so secrets,
+personal data, employer material, and anything belonging to another project are not
+welcome at all. Commits are `type(scope): subject` in English, short, one logical change
+each; AI assistance is disclosed in the trailer and labelled on the pull request; all code
+and comments are English.
 
-## 目录约定
+## Layout
 
-| 文件 | 内容 |
-|------|------|
-| `README.md` | 本索引 |
-| `requirements.md` | 需求 / 用户故事 / 范围（待写） |
-| `design.md` | 架构与关键设计决策（待写） |
-| `decisions/` | ADR，一篇一个决策 `NNNN-<slug>.md`（待建） |
+| File | Content |
+|------|---------|
+| `README.md` | This index |
+| `requirements.md` | Requirements, user stories, scope (TBD) |
+| `design.md` | Architecture and key decisions (TBD) |
+| `decisions/` | ADRs, one per decision: `NNNN-<slug>.md` (TBD) |
+| `local/` | Local scratch notes, gitignored — the only place non-English text is allowed |
 
-## 待定问题
+## Open questions
 
-- [ ] sibot 解决什么问题？给谁用？
-- [ ] 输入 / 输出是什么（CLI、常驻服务、Slack/Jira 集成、agent？）
-- [ ] 技术栈与部署形态
-- [ ] LICENSE 选型（目前 `LICENSE` 文件还不存在）
+- [ ] What problem does sibot solve, and for whom?
+- [ ] What are its inputs and outputs (CLI, long-running service, Slack/Jira integration, agent)?
+- [ ] Tech stack and deployment shape
