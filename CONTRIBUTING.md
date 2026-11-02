@@ -9,8 +9,7 @@ This document is the contract for contributions. Read it before your first commi
 
 ## 1. Project status
 
-sibot is at day zero: the scope is not fixed yet (see [`.doc/README.md`](.doc/README.md)).
-For anything larger than a typo:
+sibot is at day zero: the scope is not fixed yet. For anything larger than a typo:
 
 1. Open an issue describing the problem first.
 2. Wait for agreement on the approach.

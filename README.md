@@ -7,7 +7,7 @@
 ## Status
 
 This repository is at day zero. The project's purpose, inputs and outputs, and tech stack
-are still open questions — see [`.doc/README.md`](.doc/README.md).
+are still open questions; documentation will be added once the scope is defined.
 
 ## Contributing
 
