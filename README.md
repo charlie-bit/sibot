@@ -9,7 +9,8 @@ switch between them at will, and keep a single continuous conversation while doi
 
 ## Status
 
-Architecture is drafted in [`docs/tech.md`](docs/tech.md). No code yet.
+No code yet, and no design decisions beyond the sentence above — see
+[`docs/tech.md`](docs/tech.md).
 
 ## Documentation
 
