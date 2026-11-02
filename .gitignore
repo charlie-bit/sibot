@@ -1,0 +1,50 @@
+# ---- Secrets & local config (see CONTRIBUTING.md §2) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+secrets/
+.credentials
+.npmrc
+.pypirc
+.netrc
+.docker/config.json
+.aws/credentials
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Editors ----
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- Logs & scratch ----
+*.log
+*.local
+tmp/
+scratch/
+.cache/
+
+# ---- Language / build (uncomment as the stack lands) ----
+# node
+# node_modules/
+# dist/
+# .next/
+# coverage/
+# python
+# __pycache__/
+# .venv/
+# venv/
+# *.pyc
+# go
+# bin/
+# vendor/
+# rust
+# target/
